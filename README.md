@@ -9,11 +9,50 @@ Deploy LEMP(Linux+Nginx+MariaDB+PHP) using docker.
 * [docker](https://docs.docker.com/installation)
 * [docker compose](https://docs.docker.com/compose/install)
 
+```shell
+curl -L https://github.com/docker/compose/releases/download/1.13.0/docker-compose-`uname -s`-`uname -m` > /usr/bin/docker-compose
+chmod +x /usr/bin/docker-compose
+```
+
 ## 二、部署 LEMP
 
-`vim docker-compose.yml`
+### 2.1 不使用 docker-compose
 
-### 2.1 docker-compose
+1.Mariadb
+
+```shell
+docker run --name mariadb \
+-v /var/lib/mysql:/var/lib/mysql \
+-e MYSQL_ROOT_PASSWORD=123456 \
+-p 3306:3306 \
+-d mariadb:latest
+```
+
+2.lemp
+
+```shell
+docker run \
+--restart=always \
+--name lemp \
+--link mariadb:mysql \
+-p 80:80 \
+-p 443:443 \
+-v /var/www/html:/var/www/html \
+-d idiswy/lemp:latest
+```
+
+3.phpmyadmin
+
+```shell
+docker run --name phpmyadmin \
+--link mariadb:mysql \
+-p 8080:80 \
+-d idiswy/phpmyadmin:latest
+```
+
+### 2.2 使用 docker-compose
+
+`vim docker-compose.yml`
 
 ```shell
 version: '2'
@@ -46,13 +85,13 @@ services:
 - `MYSQL_ROOT_PASSWORD`: 将`123456`换成你的MySQL Root密码
 - `volumes`: 挂载左边是宿主机路径，右边是容器里的路径
 
-### 2.2 运行 docker-compose
+### 2.3 运行 docker-compose
 
 ```shell
 docker-compose up -d
 ```
 
-### 2.3 Nginx 站点配置
+### 2.4 Nginx 站点配置
 
 安装一个可以进入容器的小工具
 
