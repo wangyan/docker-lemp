@@ -13,9 +13,9 @@ services:
         volumes:
             - mariadb:/var/lib/mysql
         restart: always
-    lnmp:
-        container_name: lnmp
-        image: daocloud.io/wangyan/docker-lemp:latest
+    lemp:
+        container_name: lemp
+        image: idiswy/lemp:latest
         ports:
             - "80:80"
             - "443:443"
