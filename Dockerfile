@@ -1,36 +1,31 @@
 FROM phusion/baseimage:0.9.21
-MAINTAINER WangYan <i@wangyan.org>
+LABEL authors="WangYan <i@wangyan.org>"
 
 # Setup Nginx
 RUN set -xe && \
+    apt-get update && \
+    apt-get upgrade -y && \
+    apt-get install -y curl wget unzip git net-tools ca-certificates --no-install-recommends && \
     curl -O "http://nginx.org/keys/nginx_signing.key" && \
     apt-key add nginx_signing.key && \
     rm -f nginx_signing.key && \
     echo "deb http://nginx.org/packages/ubuntu/ xenial nginx" >> /etc/apt/sources.list && \
     echo "deb-src http://nginx.org/packages/ubuntu/ xenial nginx" >> /etc/apt/sources.list && \
-    sed -i 's/archive.ubuntu.com/mirrors.aliyun.com/g' /etc/apt/sources.list && \
     apt-get update && \
-    apt-get -y upgrade && \
-    apt-get install --no-install-recommends --no-install-suggests -y \
-            ca-certificates nginx && \
-    # Forward logs to docker log collector
-    # ln -sf /dev/stdout /var/log/nginx/access.log
-    # ln -sf /dev/stderr /var/log/nginx/error.log
-
-    # Nginx config
+    apt-get install --no-install-recommends --no-install-suggests -y ca-certificates nginx && \
     mv /etc/nginx/nginx.conf /etc/nginx/nginx.conf.bak && \
     mv /etc/nginx/conf.d/default.conf /etc/nginx/conf.d/default.conf.bak && \
-    mkdir -p /etc/nginx/sites-enabled /var/www/html && \
+    mkdir -p /etc/nginx/sites-enabled /etc/nginx/sites-available /var/www/public
 
-    # Nginx Runit
-    mkdir -p /etc/service/nginx && \
+COPY nginx/nginx.conf /etc/nginx/nginx.conf
+COPY nginx/default.conf /etc/nginx/conf.d/default.conf
+
+# Nginx Runit
+RUN mkdir -p /etc/service/nginx && \
     echo '#!/bin/sh' >> /etc/service/nginx/run && \
     echo 'exec 2>&1' >> /etc/service/nginx/run && \
     echo 'exec nginx -g "daemon off;"' >> /etc/service/nginx/run && \
     chmod +x /etc/service/nginx/run
-
-    COPY nginx/nginx.conf /etc/nginx/nginx.conf
-    COPY nginx/default.conf /etc/nginx/conf.d/default.conf
 
 # Setup PHP7
 ENV TIMEZONE            Asia/Shanghai
@@ -59,13 +54,12 @@ RUN set -xe && \
     php7.0-xml \
     php7.0-xmlrpc \
     php7.0-xsl \
-    php7.0-zip && \
+    php7.0-zip
 
-    # PHP7 Config
-    cp /etc/php/7.0/fpm/php-fpm.conf /etc/php/7.0/fpm/php-fpm.conf.bak && \
+# PHP7 Config
+RUN cp /etc/php/7.0/fpm/php-fpm.conf /etc/php/7.0/fpm/php-fpm.conf.bak && \
     cp /etc/php/7.0/fpm/pool.d/www.conf /etc/php/7.0/fpm/pool.d/www.conf.bak && \
     cp /etc/php/7.0/fpm/php.ini /etc/php/7.0/fpm/php.ini.bak && \
-
     sed -i "s|;*daemonize\s*=\s*yes|daemonize = no|g" /etc/php/7.0/fpm/php-fpm.conf && \
     sed -i "s|pm.max_children =.*|pm.max_children = 12|i" /etc/php/7.0/fpm/pool.d/www.conf && \
     sed -i "s|pm.start_servers =.*|pm.start_servers = 6|i" /etc/php/7.0/fpm/pool.d/www.conf && \
@@ -77,20 +71,18 @@ RUN set -xe && \
     sed -i "s|;*max_file_uploads =.*|max_file_uploads = ${PHP_MAX_FILE_UPLOAD}|i" /etc/php/7.0/fpm/php.ini && \
     sed -i "s|;*post_max_size =.*|post_max_size = ${PHP_MAX_POST}|i" /etc/php/7.0/fpm/php.ini && \
     sed -i "s|;\s*max_input_vars =.*|max_input_vars = ${MAX_INPUT_VARS}|i" /etc/php/7.0/fpm/php.ini && \
-    sed -i "s|;*cgi.fix_pathinfo=.*|cgi.fix_pathinfo= 0|i" /etc/php/7.0/fpm/php.ini && \
+    sed -i "s|;*cgi.fix_pathinfo=.*|cgi.fix_pathinfo= 0|i" /etc/php/7.0/fpm/php.ini
 
-    # Runit Config
-    mkdir -p /etc/service/phpfpm mkdir -p /run/php && \
+# Runit Config
+RUN mkdir -p /etc/service/phpfpm mkdir -p /run/php && \
     echo '#!/bin/sh' >> /etc/service/phpfpm/run && \
     echo 'exec 2>&1' >> /etc/service/phpfpm/run && \
     echo 'exec /usr/sbin/php-fpm7.0' >> /etc/service/phpfpm/run && \
     chmod +x /etc/service/phpfpm/run && \
-
-    # APT Clean
     apt-get clean && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* 
 
-VOLUME ["/var/www/html"]
+VOLUME ["/var/www/public"]
 
 EXPOSE 80 443
 

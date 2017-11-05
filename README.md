@@ -10,8 +10,8 @@ Deploy LEMP(Linux+Nginx+MariaDB+PHP) using docker.
 * [docker compose](https://docs.docker.com/compose/install)
 
 ```shell
-curl -L https://github.com/docker/compose/releases/download/1.13.0/docker-compose-`uname -s`-`uname -m` > /usr/bin/docker-compose
-chmod +x /usr/bin/docker-compose
+curl -L https://github.com/docker/compose/releases/download/1.9.0/docker-compose-`uname -s`-`uname -m` > /usr/local/bin/docker-compose
+chmod +x /usr/local/bin/docker-compose
 ```
 
 ## 二、部署 LEMP
@@ -37,7 +37,7 @@ docker run \
 --link mariadb:mysql \
 -p 80:80 \
 -p 443:443 \
--v /var/www/html:/var/www/html \
+-v /var/www/public:/var/www/public \
 -d idiswy/lemp:latest
 ```
 
@@ -76,7 +76,7 @@ services:
         links:
             - mariadb
         volumes:
-            - /var/www/html:/var/www/html
+            - /var/www/html:/var/www/public
         restart: always
 ```
 

@@ -22,5 +22,5 @@ services:
         links:
             - mariadb
         volumes:
-            - /var/www/html:/var/www/html
+            - /var/www/public:/var/www/public
         restart: always
